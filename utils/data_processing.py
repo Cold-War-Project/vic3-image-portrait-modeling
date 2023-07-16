@@ -1,4 +1,3 @@
-
 import dlib
 from utils.alignment import align_face
 from dataclasses import dataclass, field
@@ -17,7 +16,7 @@ from torchvision.datasets import ImageFolder
 
 
 class dataset_processor(ABC):
-    extensions = ['jpeg', 'jpg', 'png']
+    extensions = ["jpeg", "jpg", "png"]
 
     def create_folder(self, path):
         if not os.path.exists(path):
@@ -26,11 +25,11 @@ class dataset_processor(ABC):
     @property
     def clean_dirs(self) -> None:
         for dir in os.listdir(self.directory):
-            sub_dirs = os.listdir(f'{self.directory}/{dir}')
-            if (len(sub_dirs) <= 1) or ('.txt' not in ''.join(sub_dirs)):
-                shutil.rmtree(f'{self.directory}/{dir}')
+            sub_dirs = os.listdir(f"{self.directory}/{dir}")
+            if (len(sub_dirs) <= 1) or (".txt" not in "".join(sub_dirs)):
+                shutil.rmtree(f"{self.directory}/{dir}")
 
-        print(f'Directory{self.directory} cleaned')
+        print(f"Directory{self.directory} cleaned")
 
     @property
     def get_paths(self) -> list[dict[str, list[str]]]:
@@ -38,51 +37,50 @@ class dataset_processor(ABC):
         paths = []
 
         for dir in sub_dirs:
-            sub_path = f'{self.directory}/{dir}'
+            sub_path = f"{self.directory}/{dir}"
             files = os.listdir(sub_path)
 
-            images = [f'{sub_path}/{path}' for path in files if (
-                path[-3:-1] in extensions)]
-            dna = [f'{sub_path}/{path}' for path in files if '.txt' in path]
+            images = [
+                f"{sub_path}/{path}" for path in files if (path[-3:-1] in extensions)
+            ]
+            dna = [f"{sub_path}/{path}" for path in files if ".txt" in path]
 
-            paths.append({'dna': dna[0], 'images': images})
+            paths.append({"dna": dna[0], "images": images})
 
         self.paths = paths
 
-        print('Paths loaded')
+        print("Paths loaded")
 
     @property
     def process_and_save(self):
         self.create_folder(self.save_directory)
         for i, directory in enumerate(self.paths):
-
-            dir_path = f'{self.save_directory}/portraits#{i}'
+            dir_path = f"{self.save_directory}/portraits#{i}"
             self.create_folder(dir_path)
 
-            images = directory['images']
-            dna = directory['dna']
+            images = directory["images"]
+            dna = directory["dna"]
 
             processed_images = self.process_images(images)
 
             for ii, image in enumerate(processed_images):
                 self.save_processed_image(dir_path, ii, image)
 
-            shutil.copy(dna, f'{dir_path}/dna#{i}.txt')
+            shutil.copy(dna, f"{dir_path}/dna#{i}.txt")
 
     @property
     def save(self):
         self.create_folder(self.save_directory)
         for i, directory in enumerate(self.paths):
+            dir_path = f"{self.save_directory}/portraits#{i}"
 
-            dir_path = f'{self.save_directory}/portraits#{i}'
-
-            images = directory['images']
-            dna = directory['dna']
+            images = directory["images"]
+            dna = directory["dna"]
 
             for ii, image in enumerate(images):
-                shutil.copy(image, f'{dir_path}/portrait#{ii}')
+                shutil.copy(image, f"{dir_path}/portrait#{ii}")
 
-            shutil.copy(dna, f'{dir_path}/dna#{i}.txt')
+            shutil.copy(dna, f"{dir_path}/dna#{i}.txt")
 
     @abstractmethod
     def process_images(self, images):
@@ -113,12 +111,12 @@ class dataset(dataset_processor):
 
 
 class dataset_align(dataset):
-
     def __post_init__(self):
         super().__post_init__()
         if self.paths is not None:
             self.predictor = dlib.shape_predictor(
-                './utils/dependencies/shape_predictor_68_face_landmarks.dat')
+                "./utils/dependencies/shape_predictor_68_face_landmarks.dat"
+            )
 
     def align_image(self, image: str):
         return align_face(filepath=image, predictor=self.predictor)
@@ -135,7 +133,7 @@ class dataset_align(dataset):
         return processed_images
 
     def save_processed_image(self, path: str, index: int, image):
-        image.save(f'{path}/angle#{index}.jpg')
+        image.save(f"{path}/angle#{index}.jpg")
 
 
 class torchvision_dataset_align(dataset_align):
@@ -153,11 +151,11 @@ class torchvision_dataset_align(dataset_align):
 
     @property
     def process_and_save(self):
-
         processor = DataLoader(
             dataset=self.images,
             batch_size=len(self.images),
-            num_workers=self.num_workers)
+            num_workers=self.num_workers,
+        )
 
         try:
             next(iter(processor))
@@ -165,4 +163,4 @@ class torchvision_dataset_align(dataset_align):
         except BaseException:
             pass
 
-        print('Dataset aligned!')
+        print("Dataset aligned!")

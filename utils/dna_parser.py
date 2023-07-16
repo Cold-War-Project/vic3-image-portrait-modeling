@@ -11,60 +11,52 @@ def load_dict(path):
     return genes
 
 
-def dna_ToTensor(path, genes=load_dict(
-        './utils/dependencies/gene_dicts.json')):
+def dna_ToTensor(path, genes=load_dict("./utils/dependencies/gene_dicts.json")):
     tensors = []
     with open(path, "r") as f:
         lines = f.readlines()
 
-        p_gene, p_sub_gene, p_value, p_age, p_gender = r'(?:\t)\w+', r'"\w+"', r'\b\d+', r'\d.\d+', r'[=]\w+'
+        p_gene, p_sub_gene, p_value, p_age, p_gender = (
+            r"(?:\t)\w+",
+            r'"\w+"',
+            r"\b\d+",
+            r"\d.\d+",
+            r"[=]\w+",
+        )
 
-        def get_gene(
-            line,
-            expression=p_gene): return re.search(
-            expression,
-            line).group()[
-            1:]
+        def get_gene(line, expression=p_gene):
+            return re.search(expression, line).group()[1:]
 
-        def get_sub_gene(
-            line,
-            expression=p_sub_gene): return re.search(
-            expression,
-            line).group()[
-            1:-1]
+        def get_sub_gene(line, expression=p_sub_gene):
+            return re.search(expression, line).group()[1:-1]
 
-        def get_value(
-            line, expression=p_value): return re.search(
-            expression, line).group()
+        def get_value(line, expression=p_value):
+            return re.search(expression, line).group()
 
         for line in lines:
             try:
                 gene, sub_gene = get_gene(line), get_sub_gene(line)
             except BaseException:
-                if 'age' in line:
-                    gene = 'age'
-                    sub_gene = 'age'
+                if "age" in line:
+                    gene = "age"
+                    sub_gene = "age"
                     value = float(get_value(line, expression=p_age)) * 255
 
                     index = genes[gene].index(sub_gene)
                     length = len(genes[gene])
 
-                    tensor = F.one_hot(
-                        torch.tensor([index]),
-                        num_classes=length)
+                    tensor = F.one_hot(torch.tensor([index]), num_classes=length)
                     tensors.append(value * tensor)
 
-                if 'type' in line:
-                    gene = 'gender'
+                if "type" in line:
+                    gene = "gender"
                     value = 255
                     sub_gene = sub_gene = get_gene(line, expression=p_gender)
 
                     index = genes[gene].index(sub_gene)
                     length = len(genes[gene])
 
-                    tensor = F.one_hot(
-                        torch.tensor([index]),
-                        num_classes=length)
+                    tensor = F.one_hot(torch.tensor([index]), num_classes=length)
                     tensors.append(value * tensor)
 
                 continue
@@ -83,37 +75,31 @@ def dna_ToTensor(path, genes=load_dict(
     return torch.squeeze(tensors)
 
 
-def tensor_ToDna(tensor, path, genes=load_dict(
-        './utils/dependencies/gene_dicts.json')):
+def tensor_ToDna(tensor, path, genes=load_dict("./utils/dependencies/gene_dicts.json")):
     target_genes = {}
 
     lengths = [len(sub_genes) for sub_genes in list(genes.values())]
 
     for i, gene in enumerate(genes):
-
         i_2 = lengths[i]
         i_1 = sum(lengths[:i])
 
-        sub_tensor = tensor[i_1:i_1 + i_2]
+        sub_tensor = tensor[i_1 : i_1 + i_2]
         index = torch.argmax(sub_tensor).item()
 
         value = torch.max(sub_tensor).item()
         sub_gene = genes[gene][index]
 
-        target_genes.update({gene: {'sub_gene': sub_gene, 'value': value}})
+        target_genes.update({gene: {"sub_gene": sub_gene, "value": value}})
 
-    with open('./utils/dependencies/default_dna.txt', 'r') as f1, open(path, 'w') as f2:
+    with open("./utils/dependencies/default_dna.txt", "r") as f1, open(path, "w") as f2:
         new_lines = []
         lines = f1.readlines()
 
-        p_gene = r'(?:\t)\w+'
+        p_gene = r"(?:\t)\w+"
 
-        def get_gene(
-            line,
-            expression=p_gene): return re.search(
-            expression,
-            line).group()[
-            1:]
+        def get_gene(line, expression=p_gene):
+            return re.search(expression, line).group()[1:]
 
         for line in lines:
             try:
@@ -122,13 +108,13 @@ def tensor_ToDna(tensor, path, genes=load_dict(
                 continue
 
             if gene in list(target_genes.keys()):
-                sub_gene = target_genes[gene]['sub_gene']
-                value = target_genes[gene]['value']
+                sub_gene = target_genes[gene]["sub_gene"]
+                value = target_genes[gene]["value"]
                 sub_line = line
                 for substring in re.findall(r'"\w+"\s\d+', line):
                     sub_line = sub_line.replace(
-                        substring, '"{}" {}'.format(
-                            sub_gene, value))
+                        substring, '"{}" {}'.format(sub_gene, value)
+                    )
 
                 new_lines.append(sub_line)
 
@@ -140,6 +126,6 @@ def tensor_ToDna(tensor, path, genes=load_dict(
         f2.close()
 
 
-if __name__ == '__main__':
-    #tensor_ToDna(torch.randn(220), './test.txt')
-    print(dna_ToTensor('portraits_embeddings/6/6.txt').size())
+if __name__ == "__main__":
+    # tensor_ToDna(torch.randn(220), './test.txt')
+    print(dna_ToTensor("portraits_embeddings/6/6.txt").size())

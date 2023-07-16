@@ -9,15 +9,15 @@ import torch
 class conv_block(LightningModule):
     def __init__(self, in_channels, pool):
         super(conv_block, self).__init__()
-        self.conv_1 = nn.Conv2d(in_channels, in_channels*2, kernel_size=3)
-        self.conv_2 = nn.Conv2d(in_channels*2, in_channels*4, kernel_size=3)
-        self.conv_3 = nn.Conv2d(in_channels*4, in_channels*8, kernel_size=3)
+        self.conv_1 = nn.Conv2d(in_channels, in_channels * 2, kernel_size=3)
+        self.conv_2 = nn.Conv2d(in_channels * 2, in_channels * 4, kernel_size=3)
+        self.conv_3 = nn.Conv2d(in_channels * 4, in_channels * 8, kernel_size=3)
 
-        self.bn_1 = nn.BatchNorm2d(in_channels*2)
-        self.bn_2 = nn.BatchNorm2d(in_channels*4)
-        self.bn_3 = nn.BatchNorm2d(in_channels*8)
+        self.bn_1 = nn.BatchNorm2d(in_channels * 2)
+        self.bn_2 = nn.BatchNorm2d(in_channels * 4)
+        self.bn_3 = nn.BatchNorm2d(in_channels * 8)
 
-        if pool == 'avg':
+        if pool == "avg":
             self.pool = nn.AvgPool2d(kernel_size=3)
         else:
             self.pool = nn.MaxPool2d(kernel_size=3)
@@ -41,6 +41,7 @@ class conv_block(LightningModule):
 
         return x
 
+
 class res_block(LightningModule):
     def __init__(self, in_channels, out_channels):
         super(res_block, self).__init__()
@@ -54,7 +55,6 @@ class res_block(LightningModule):
 
         self.activation = nn.ELU()
         self.sigmoid = nn.Sigmoid()
-
 
     def forward(self, x):
         x_1 = self.l1(x)
@@ -75,26 +75,26 @@ class res_block(LightningModule):
 
         return x_3
 
+
 class Regressor(LightningModule):
     def __init__(self, input_size=2000, output_size=227):
         super(Regressor, self).__init__()
-        
+
         self.regressor = nn.Sequential(
             res_block(input_size, 1000),
             res_block(1000, 1000),
             res_block(1000, 1000),
             res_block(1000, 1000),
             nn.Linear(1000, output_size),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
     def forward(self, x):
         x = self.regressor(x)
-        x =  x*265
-        
+        x = x * 265
+
         return x
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     model = Regressor()
-    
